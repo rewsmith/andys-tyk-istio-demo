@@ -7,8 +7,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/TykTechnologies/demo-argo-selfmanaged'
-    path: staging/tyk-config-secrets
+    repoURL: https://github.com/rewsmith/andys-tyk-istio-demo.git
+    path: apps/tyk-config-secrets
     targetRevision: HEAD
   destination:
     server: 'https://kubernetes.default.svc'
