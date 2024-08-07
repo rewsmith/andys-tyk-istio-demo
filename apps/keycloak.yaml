@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/TykTechnologies/tyk-istio-demo.git
+    repoURL: https://github.com/rewsmith/andys-tyk-istio-demo.git
     targetRevision: HEAD
     path: resources/keycloak-operator
   destination:
@@ -61,7 +61,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/TykTechnologies/tyk-istio-demo.git
+    repoURL: https://github.com/rewsmith/andys-tyk-istio-demo.git
     targetRevision: HEAD
     path: resources/keycloak
   destination:
