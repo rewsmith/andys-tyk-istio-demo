@@ -1,0 +1,129 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tyk-config-secrets
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/TykTechnologies/demo-argo-selfmanaged'
+    path: staging/tyk-config-secrets
+    targetRevision: HEAD
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: tyk
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tyk-redis
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: 18.12.1
+    helm:
+      parameters:
+        - name: image.tag
+          value: 6.2.13
+        - name: auth.existingSecret
+          value: tyk-redispgsql-secrets
+        - name: auth.password
+          value: redis-password
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tyk
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tyk-postgres
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql
+    targetRevision: 12.12.10
+    helm:
+      parameters:
+        - name: auth.database
+          value: tyk_analytics
+        - name: image.tag
+          value: 15.5.0-debian-11-r18
+        - name: global.postgresql.auth.existingSecret
+          value: tyk-redispgsql-secrets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tyk
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tyk-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://helm.tyk.io/public/helm/charts
+    chart: tyk-stack
+    targetRevision: 1.4.0
+    helm:
+      parameters:
+        - name: global.license.dashboard
+          value: >-
+            eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGxvd2VkX25vZGVzIjoiMjAxOTMwZTEtMDMyNC00MjJjLTdmNTEtNjllZGM1MDY3NzJiLDI5ODhlNjk4LTI3MmYtNDY2Mi01MWY2LTU2MWQ2MThiZWI4OCxjZjcxM2MyMC1mN2QxLTQ0YmUtNWQ5Mi00NzNhNDljYzQ3NTIsYTdkZTJmOGMtNWE4YS00MWMyLTYwMmEtZmE5ZmQ3OGY0MmEzLGE5OGMxNjMxLTE1OWMtNGRhYS03M2YxLTg4ZDhiYzYxNzFlOCw2YmFmMDgzOC00M2I1LTQxNTktNjIwNy1mZTBmYzI4NGY3ZmMsZDU5ZDQ1YjItMmRmNi00M2QyLTU2MjktZWM1M2U3M2EzYWQxLDE3NjdlMTllLTdjOGEtNDE5Zi00OTE2LTBmZTQ3NTA0OTRlNiwzOWQwYzdiZi0wNzY2LTQ2Y2EtNDNjYy0yZmVmOTAxOTM3ZmMsZjIyZGFiMjgtZWRkZS00OWI3LTU2ZDItMTc2OTM1NDMzMTI2IiwiZXhwIjoxNzI1NDk0Mzk5LCJpYXQiOjE3MjI4NjI0MzIsIm93bmVyIjoiNjFjY2U2MmMxMjFjYTEwMDAxOGJiMTkwIiwic2NvcGUiOiJtdWx0aV90ZWFtLHJiYWMsZ3JhcGgsZmVkZXJhdGlvbiIsInYiOiIyIn0.DJTmFDTJDZH2CTdnKh5ieggk0nZTweHh0fcEQpvZk1ugU4Dr5czeeRdQlrOevITUYKy2SnSyUoJqVRqPUA35zdpj9Z9EOfPyzIT6YzkH14ldGjd1iVdJgChFwLypAIRpz4_qFCQ7btiu1bUtK7WW7hGQnzub1u5Z32f4cTdUpgOjhjUqy3dKbt2YUr-mLfGXFUfeRRXCRRjQj_rHrBaOYu1vJ7rq5eIbDdi2Y-tX47cXOXoJJOyXPKY1DhTJf8kXtbVKxA27rJinrB53QhVFF-6N8HoEUEacj3dQlKaejf0H1TZCOY6ZsUzwG3MQ1a1RlCDwC5Pd3hloHp53KN6USQ
+        - name: global.adminUser.password
+          value: topsecretpassword
+        - name: global.redis.passSecret.name
+          value: tyk-redispgsql-secrets
+        - name: global.redis.passSecret.keyName
+          value: redis-password
+        - name: global.redis.addrs
+          value: 'tyk-redis-master.tyk.svc:6379'
+        - name: global.postgres.connectionStringSecret.name
+          value: tyk-redispgsql-secrets
+        - name: global.postgres.connectionStringSecret.keyName
+          value: postgresURL
+        - name: global.secrets.APISecret
+          value: BananaSplit42
+        - name: global.components.bootstrap
+          value: 'true'
+        - name: tyk-bootstrap.bootstrap.dashboard
+          value: 'true'
+        - name: tyk-bootstrap.bootstrap.portal
+          value: 'false'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tyk
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
